@@ -94,6 +94,96 @@ export const getAllStrings = (req, res) => {
     }
 };
 
+
+// Simple natural language parsing for string filtering
+export const naturalLanguageFilter = (req, res) => {
+    const { query } = req.query;
+
+    // Validate presence of query parameter
+    if (!query) {
+        return res.status(400).json({ error: 'Missing query parameter.' });
+    }
+
+    let results = [...stringStore.values()];
+
+    // Object to store interpreted filters
+    let filters = {};
+    const lower = query.toLowerCase();
+
+
+    // Detect if user wants palindromic strings
+    if (lower.includes('palindromic')) filters.is_palindrome = true;
+
+    // Detect if user wants only single word strings
+    if (lower.includes('single word')) filters.word_count = 1;
+
+    // Detect if user wants multiple-word strings (more than one word)
+    if (lower.includes('multiple words')) filters.min_word_count = 2;
+
+    // Detect "longer than X" pattern → sets min_length
+    if (lower.includes('longer than')) {
+        const match = lower.match(/longer than (\d+)/);
+        if (match) filters.min_length = Number(match[1]) + 1;
+    }
+
+    // Detect "containing the letter X"
+    if (lower.includes('containing the letter')) {
+        const match = lower.match(/letter (\w)/);
+        if (match) filters.contains_character = match[1];
+    }
+
+    // If no filters were found → query couldn’t be parsed
+    if (Object.keys(filters).length === 0) {
+        return res.status(400).json({ error: 'Unable to parse natural language query.' });
+    }
+
+    // Handle conflicting filters (422)
+    // Example: "single word strings with word count 2" or logically impossible combos
+    if (filters.word_count && filters.min_length && filters.word_count > filters.min_length) {
+        return res.status(422).json({
+            error: 'Query parsed but resulted in conflicting filters. Please check your query.'
+        });
+    }
+
+    // You can also check other logical conflicts here
+    if (filters.max_length && filters.min_length && filters.max_length < filters.min_length) {
+        return res.status(422).json({
+            error: 'Query parsed but resulted in conflicting filters. Please check your query.'
+        });
+    }
+
+
+    if (filters.is_palindrome) {
+        results = results.filter(r => r.properties.is_palindrome);
+    }
+
+    if (filters.word_count) {
+        results = results.filter(r => r.properties.word_count === filters.word_count);
+    }
+
+    if (filters.min_word_count) {
+        results = results.filter(r => r.properties.word_count >= filters.min_word_count);
+    }
+
+    if (filters.min_length) {
+        results = results.filter(r => r.properties.length >= filters.min_length);
+    }
+
+    if (filters.contains_character) {
+        results = results.filter(r => r.value.includes(filters.contains_character));
+    }
+
+    res.json({
+        data: results,
+        count: results.length,
+        interpreted_query: {
+            original: query,
+            parsed_filters: filters
+        }
+    });
+};
+
+
 export const deleteString = (req, res) => {
     const { string_value } = req.params;
 
@@ -105,44 +195,4 @@ export const deleteString = (req, res) => {
     }
 
     res.status(404).json({ error: 'String not found.' });
-};
-
-// simple natural language parsing
-export const naturalLanguageFilter = (req, res) => {
-    const { query } = req.query;
-    if (!query) return res.status(400).json({ error: 'Missing query parameter.' });
-
-    let filters = {};
-
-    const lower = query.toLowerCase();
-
-    if (lower.includes('palindromic')) filters.is_palindrome = true;
-    if (lower.includes('single word')) filters.word_count = 1;
-    if (lower.includes('longer than')) {
-        const match = lower.match(/longer than (\d+)/);
-        if (match) filters.min_length = Number(match[1]) + 1;
-    }
-    if (lower.includes('containing the letter')) {
-        const match = lower.match(/letter (\w)/);
-        if (match) filters.contains_character = match[1];
-    }
-
-    if (Object.keys(filters).length === 0) {
-        return res.status(400).json({ error: 'Unable to parse natural language query' });
-    }
-
-    let results = [...stringStore.values()];
-    if (filters.is_palindrome) results = results.filter(r => r.properties.is_palindrome);
-    if (filters.word_count) results = results.filter(r => r.properties.word_count === filters.word_count);
-    if (filters.min_length) results = results.filter(r => r.properties.length >= filters.min_length);
-    if (filters.contains_character) results = results.filter(r => r.value.includes(filters.contains_character));
-
-    res.json({
-        data: results,
-        count: results.length,
-        interpreted_query: {
-            original: query,
-            parsed_filters: filters
-        }
-    });
 };
