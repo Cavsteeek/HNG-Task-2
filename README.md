@@ -185,7 +185,9 @@ Send requests to any endpoint:
 
 - `POST /strings`
 - `GET /strings`
+- `GET /strings/{string value}`
 - `GET /strings/filter-by-natural-language`
+- `DELETE /strings/{string value}`
 
 ### 🟦 cURL Example
 
