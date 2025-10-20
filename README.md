@@ -118,7 +118,7 @@ It also supports **query-based filtering**, **natural language search**, and **d
 
 ```bash
 git clone https://github.com/Cavsteeek/HNG-Task-2.git
-cd hng-string-analyzer
+cd HNG-Task-2
 ```
 
 ---
@@ -154,12 +154,13 @@ Visit the app in your browser or API tool:
 
 ## 🧰 Dependencies
 
-| Package     | Purpose                         |
-| ----------- | ------------------------------- |
-| **express** | Web framework for building APIs |
-| **cors**    | Handles cross-origin requests   |
-| **dotenv**  | Loads environment variables     |
-| **crypto**  | Used to generate SHA-256 hash   |
+| Package     | Purpose                                              |
+| ----------- | ---------------------------------------------------- |
+| **express** | Web framework for building APIs                      |
+| **cors**    | Handles cross-origin requests                        |
+| **dotenv**  | Loads environment variables                          |
+| **crypto**  | Used to generate SHA-256 hash                        |
+| **nodemon** | Automatically restarts the server during development |
 
 To install all:
 
